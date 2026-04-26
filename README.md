@@ -2,13 +2,29 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19777260.svg)](https://doi.org/10.5281/zenodo.19777260)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Production](https://img.shields.io/badge/production-faith.localkin.ai_·_heal.localkin.ai-brightgreen)](https://localkin.dev)
+[![Faith](https://img.shields.io/badge/live-faith.localkin.ai-emerald?logo=googlechrome&logoColor=white)](https://faith.localkin.ai)
+[![Heal](https://img.shields.io/badge/live-heal.localkin.ai-emerald?logo=googlechrome&logoColor=white)](https://heal.localkin.ai)
 
 **Replace your entire RAG pipeline with `grep`. 100% accuracy, sub-25ms latency, zero infrastructure.**
 
 > For domain-specific knowledge grounding — where the vocabulary is predictable and the corpus is bounded — the entire RAG stack is unnecessary. Retrieval does not need intelligence. The LLM is the intelligence.
 
 [📄 Paper v1.1 (Zenodo)](https://doi.org/10.5281/zenodo.19777260) · [Markdown](paper/grep_is_all_you_need.md) · [PDF](paper/grep_is_all_you_need.pdf) · [中文 README](README_zh.md)
+
+---
+
+## 🟢 Try it live — production deployment, no signup, no API key
+
+This isn't a research demo. **It's running right now**, serving 76 LLM agents on a single Mac mini.
+
+| Live system | What's there | Try this query |
+|---|---|---|
+| **🌐 [faith.localkin.ai](https://faith.localkin.ai)** | 37 Christian spiritual masters spanning 1,900 years (Irenaeus 130 AD → T. Austin-Sparks 1971), with a multi-master debate arena | Click [Augustine](https://faith.localkin.ai/augustine) → ask *"What is the relationship between grace and free will?"* — every quote you'll see is grep-verifiable in his actual writings. |
+| **🌐 [heal.localkin.ai](https://heal.localkin.ai)** | 39 Traditional Chinese Medicine masters spanning 4,500 years (Yellow Emperor → living National Grand Masters), with school debates | Click [Zhang Zhongjing](https://heal.localkin.ai/zhang_zhongjing) → ask *"What's the difference between 桂枝汤 and 麻黄汤?"* — answers grounded in 18 versions of *Shanghan Lun*. |
+
+**Both subdomains use Knowledge Search (this repo) as their retrieval layer.** The `examples/` corpus you can `grep` locally is a public-domain subset of what those agents query against. The architecture, code, and zero-hallucination contract documented in the paper are exactly what serves those URLs.
+
+If anything below seems too good to be true, **click those links and break it yourself** — that's why they're live.
 
 ---
 
@@ -146,17 +162,36 @@ your_knowledge_base/
 - **Massive corpus** (10GB+ where `grep` latency matters)
 - **Entity-relationship traversal** (explicit graph queries)
 
-## Production Deployment
+## Production Deployment — click and verify
 
-This approach powers [LocalKin](https://localkin.dev), a self-hallucination-free, self-improving multi-agent system on a single Mac mini. As of April 2026 it serves as the knowledge backbone for:
+This approach powers [LocalKin](https://localkin.dev), a self-hallucination-free, self-improving multi-agent system on a **single Mac mini**. As of April 2026 it serves as the knowledge backbone for **76 specialized LLM agents** spanning two languages and four-and-a-half millennia of human thought:
 
-- **39 Traditional Chinese Medicine agents** (`heal.localkin.ai`) — 4,500 years of classical texts, from Huang Di to living National Grand Masters
-- **37 Christian spiritual direction agents** (`faith.localkin.ai`) — 1,900 years of texts, from Irenaeus (130 AD) to T. Austin-Sparks (1971)
-- **1 U.S. citizenship coaching agent**
+### 🌐 [heal.localkin.ai](https://heal.localkin.ai) — 39 TCM masters
+Sample agents (each link goes to a real chat page, free, no signup):
 
-**~500 source texts, 76 specialized agents, 180 MB corpus, two languages, four-and-a-half millennia of human thought** — all retrieved by `grep`.
+| Master | Era | Try asking |
+|---|---|---|
+| [黄帝 / Yellow Emperor](https://heal.localkin.ai/huang_di) | ~2500 BCE | 五行学说的根源是什么？ |
+| [张仲景 / Zhang Zhongjing](https://heal.localkin.ai/zhang_zhongjing) | 150-219 AD | 桂枝汤与麻黄汤如何辨证？ |
+| [李时珍 / Li Shizhen](https://heal.localkin.ai/li_shizhen) | 1518-1593 | 黄芪和人参的药性区别 |
+| [倪海厦 / Ni Haixia](https://heal.localkin.ai/ni_haixia) | 1954-2012 | 经方派与温病派的本质分歧 |
+
+### 🌐 [faith.localkin.ai](https://faith.localkin.ai) — 37 Christian spiritual masters
+
+| Master | Era | Try asking |
+|---|---|---|
+| [Irenaeus](https://faith.localkin.ai/irenaeus) | 130-202 AD | What is your view of apostolic tradition? |
+| [Augustine](https://faith.localkin.ai/augustine) | 354-430 AD | What is the relationship between grace and free will? |
+| [Madame Guyon](https://faith.localkin.ai/guyon) | 1648-1717 | What does inner prayer look like in daily life? |
+| [T. Austin-Sparks](https://faith.localkin.ai/austin_sparks) | 1885-1971 | 您与倪柝声在 Honor Oak 都讨论了什么？ |
+
+**~500 source texts, 76 agents, 180 MB corpus** — all retrieved by `grep`.
 
 The `_compiled/` Layer 2 files grow nightly via a cron-driven autonomous pipeline (see paper §9) at **$0/year** in API costs, after migrating the compilation LLM from paid Anthropic Haiku to local-Ollama-served Kimi 2.6 in April 2026.
+
+### Why this matters for skeptics
+
+The strongest evidence that "grep is all you need" is not in this repo's `search.sh` (30 lines look trivial) or even in the paper's tables. It is in those URLs above. **Click any one, ask any question, then ask the agent for its source.** Every quote you receive is a literal substring of an actual public-domain text in our corpus — verifiable on your end with the same `grep` command this repo ships.
 
 ## Reproducibility
 

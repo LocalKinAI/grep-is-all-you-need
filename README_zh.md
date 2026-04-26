@@ -2,13 +2,29 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19777260.svg)](https://doi.org/10.5281/zenodo.19777260)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Production](https://img.shields.io/badge/production-faith.localkin.ai_·_heal.localkin.ai-brightgreen)](https://localkin.dev)
+[![Faith](https://img.shields.io/badge/live-faith.localkin.ai-emerald?logo=googlechrome&logoColor=white)](https://faith.localkin.ai)
+[![Heal](https://img.shields.io/badge/live-heal.localkin.ai-emerald?logo=googlechrome&logoColor=white)](https://heal.localkin.ai)
 
 **用 `grep` 替换你的整个 RAG 流水线。100% 准确率，<25ms 延迟，零基础设施。**
 
 > 对于领域特定的知识检索——词汇可预测、语料库有界——整个 RAG 技术栈都是多余的。检索不需要智能，LLM 才是智能。
 
 [📄 论文 v1.1（Zenodo）](https://doi.org/10.5281/zenodo.19777260) · [Markdown](paper/grep_is_all_you_need.md) · [PDF](paper/grep_is_all_you_need.pdf) · [English README](README.md)
+
+---
+
+## 🟢 现在就来用 — 真实生产环境，免注册、免 API key
+
+这不是研究 demo。**它现在正在运行**，一台 Mac mini 服务 76 个 LLM 智能体。
+
+| 在线系统 | 有什么 | 试这个查询 |
+|---|---|---|
+| **🌐 [faith.localkin.ai](https://faith.localkin.ai)** | 37 位基督教灵修大师，跨越 1,900 年（爱任纽 130 AD → 史百克 1971），含多大师辩论台 | 点击 [奥古斯丁](https://faith.localkin.ai/augustine) → 问"恩典与自由意志的关系？"——所有引文都可在他真实著作中 grep 验证 |
+| **🌐 [heal.localkin.ai](https://heal.localkin.ai)** | 39 位中医大师跨越 4,500 年（黄帝 → 健在的国医大师），含学派辩论 | 点击 [张仲景](https://heal.localkin.ai/zhang_zhongjing) → 问"桂枝汤和麻黄汤的区别？"——答案根植于 18 个版本的《伤寒论》 |
+
+**两个子域名都把 Knowledge Search（本仓库）作为检索层。** 你能在本地 `grep` 的 `examples/` 语料库就是这些智能体查询语料的公版子集。论文里描述的架构、代码、零幻觉契约——就是服务那些 URL 的同一套东西。
+
+如果下面的内容听起来太美好，**点击这两个链接亲自打破它**——它们就是为此而 live 的。
 
 ---
 
@@ -120,17 +136,36 @@ your_knowledge_base/
 - **超大语料库**（10GB+ 时 `grep` 延迟变明显）
 - **实体关系遍历**（显式图查询）
 
-## 生产部署
+## 生产部署 — 点击亲自验证
 
-这套方法支撑 [LocalKin](https://localkin.dev) —— 一台 Mac mini 上零幻觉、自我改进的多智能体系统。截至 2026 年 4 月，它作为以下系统的知识骨干：
+这套方法支撑 [LocalKin](https://localkin.dev) —— **一台 Mac mini** 上零幻觉、自我改进的多智能体系统。截至 2026 年 4 月，它作为 **76 个专业 LLM 智能体** 的知识骨干，跨越两种语言和四千五百年人类思想：
 
-- **39 个传统中医智能体**（`heal.localkin.ai`）—— 4,500 年经典医学文本，从黄帝到健在的国医大师
-- **37 个基督教灵修方向智能体**（`faith.localkin.ai`）—— 1,900 年文本，从爱任纽（130 AD）到史百克（1971）
-- **1 个美国公民辅导智能体**
+### 🌐 [heal.localkin.ai](https://heal.localkin.ai) — 39 位中医大师
+样本智能体（每个链接打开都是真实的对话页面，免费、免注册）：
 
-**约 500 份原始文献、76 个专业智能体、180 MB 语料库、两种语言、四千五百年人类思想**——全部由 `grep` 检索。
+| 大师 | 时代 | 尝试问 |
+|---|---|---|
+| [黄帝](https://heal.localkin.ai/huang_di) | 约公元前 2500 年 | 五行学说的根源是什么？ |
+| [张仲景](https://heal.localkin.ai/zhang_zhongjing) | 150-219 AD | 桂枝汤与麻黄汤如何辨证？ |
+| [李时珍](https://heal.localkin.ai/li_shizhen) | 1518-1593 | 黄芪和人参的药性区别 |
+| [倪海厦](https://heal.localkin.ai/ni_haixia) | 1954-2012 | 经方派与温病派的本质分歧 |
+
+### 🌐 [faith.localkin.ai](https://faith.localkin.ai) — 37 位基督教灵修大师
+
+| 大师 | 时代 | 尝试问 |
+|---|---|---|
+| [爱任纽](https://faith.localkin.ai/irenaeus) | 130-202 AD | 您怎么看使徒传承？ |
+| [奥古斯丁](https://faith.localkin.ai/augustine) | 354-430 AD | 恩典与自由意志的关系 |
+| [盖恩夫人](https://faith.localkin.ai/guyon) | 1648-1717 | 内在祈祷在日常生活中的实践 |
+| [史百克](https://faith.localkin.ai/austin_sparks) | 1885-1971 | 您与倪柝声在 Honor Oak 都讨论了什么？ |
+
+**约 500 份原始文献、76 个智能体、180 MB 语料库**——全部由 `grep` 检索。
 
 `_compiled/` 第二层文件每夜由一条基于 cron 的自主流水线生长（详见论文 §9），在 2026 年 4 月将编译 LLM 由付费 Anthropic Haiku 迁移到本地 Ollama 上服务的 Kimi 2.6 之后，**API 成本 $0/年**。
+
+### 怀疑论者请看这里
+
+"`grep` 即是你所需要的一切"——这一主张最强的证据**不在本仓库 30 行的 `search.sh` 里**（看起来太简单了），**甚至不在论文的表格里**。它**在上面那些 URL 里**。点击任何一个，问任何问题，然后让智能体给出原文出处。**你看到的每一句引文都是真实公版文本的字面子串**——用本仓库附带的同一个 `grep` 命令你就能在自己机器上验证。
 
 ## 可复现性
 
