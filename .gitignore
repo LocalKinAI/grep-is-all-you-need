@@ -1,0 +1,5 @@
+# Python venv created by benchmark.sh on first run
+.bench_venv/
+
+# Benchmark output (regenerable)
+benchmark_results.md
