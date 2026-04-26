@@ -1,23 +1,36 @@
 #!/bin/bash
-# Knowledge Compile — One-time LLM knowledge extraction
-# Converts raw text into structured concepts + FAQ via Anthropic API
+# Knowledge Compile — One-time LLM knowledge extraction (Layer 2 builder)
+# Converts raw text into per-source concepts.md + faq.md.
+#
+# Default LLM: kimi-k2.6:cloud via local Ollama (free, ~$0/file)
+# Fallback   : Anthropic Haiku 4.5 via API (paid, ~$0.01/file)
 #
 # Usage:
-#   ANTHROPIC_API_KEY=sk-ant-... ./compile.sh path/to/document.txt
-#   ./compile.sh --force path/to/document.md    # recompile even if exists
+#   ./compile.sh path/to/document.txt              # uses local Ollama Kimi 2.6
+#   ./compile.sh --force path/to/document.md       # recompile
+#   COMPILE_BACKEND=anthropic ANTHROPIC_API_KEY=sk-ant-... ./compile.sh ...
 #
 # Output:
-#   path/to/_compiled/document_concepts.md
-#   path/to/_compiled/document_faq.md
+#   path/to/_compiled/document_concepts.md   (~3 KB, 5-10 core concepts)
+#   path/to/_compiled/document_faq.md        (~2.5 KB, 5-8 Q&A pairs)
 #
-# Requires: curl, jq (optional, for prettier output)
-# Cost: ~$0.15-0.20 per file (Claude Haiku)
+# Requires: curl, python3 (for JSON), Ollama (default) OR ANTHROPIC_API_KEY (fallback)
+# See:      https://doi.org/10.5281/zenodo.19777260
 
 set -euo pipefail
 
-# ── Config ──
-API_URL="https://api.anthropic.com/v1/messages"
-MODEL="${COMPILE_MODEL:-claude-haiku-4-5-20251001}"
+# ── Backend selection ──
+# kimi (default) | anthropic
+BACKEND="${COMPILE_BACKEND:-auto}"
+
+# Kimi (Ollama) config
+OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434/api/generate}"
+KIMI_MODEL="${KIMI_MODEL:-kimi-k2.6:cloud}"
+
+# Anthropic config (fallback)
+ANTHROPIC_URL="https://api.anthropic.com/v1/messages"
+HAIKU_MODEL="${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}"
+
 MAX_TOKENS=2000
 MAX_INPUT_BYTES=153600  # 150KB
 FORCE=false
@@ -27,29 +40,43 @@ INPUT_FILE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --force|-f) FORCE=true; shift ;;
-        --model|-m) MODEL="$2"; shift 2 ;;
+        --backend|-b) BACKEND="$2"; shift 2 ;;
+        --kimi) BACKEND="kimi"; shift ;;
+        --anthropic) BACKEND="anthropic"; shift ;;
         --help|-h)
             cat <<'EOF'
-Knowledge Compile — One-time LLM knowledge extraction
+Knowledge Compile — Layer 2 builder for grep-is-all-you-need
 
 Usage:
-  ANTHROPIC_API_KEY=sk-ant-... ./compile.sh [options] <file>
+  ./compile.sh [options] <file>
 
 Options:
-  --force, -f    Recompile even if output exists
-  --model, -m    LLM model (default: claude-haiku-4-5-20251001)
-  --help, -h     Show this help
+  --force, -f      Recompile even if output exists
+  --backend, -b    LLM backend: kimi | anthropic | auto (default: auto)
+  --kimi           Force local Kimi (free)
+  --anthropic      Force Anthropic Haiku (paid, requires ANTHROPIC_API_KEY)
+  --help, -h       Show this help
 
-Environment:
-  ANTHROPIC_API_KEY    Your Anthropic API key (required)
-  COMPILE_MODEL        Override default model
+Backends:
+  kimi (default, free, ~$0/file)
+    - Requires Ollama running locally with kimi-k2.6:cloud
+    - Set up: brew install ollama && ollama pull kimi-k2.6:cloud
+    - Override: KIMI_MODEL=kimi-k2.5:cloud OLLAMA_URL=http://...
+
+  anthropic (fallback, paid, ~$0.01/file with Haiku 4.5)
+    - Requires ANTHROPIC_API_KEY environment variable
+    - Override model: ANTHROPIC_MODEL=claude-sonnet-4-5-20251001
+
+  auto (default behavior)
+    - Tries Kimi first; falls back to Anthropic if Ollama unavailable
+      AND ANTHROPIC_API_KEY is set
 
 Output:
   Creates _compiled/ directory next to source file with:
   - {name}_concepts.md  (5-10 core concepts, key quotes, practical points)
   - {name}_faq.md       (5-8 Q&A pairs for common reader questions)
 
-Cost: ~$0.15-0.20 per file using Claude Haiku
+Cost: $0/file with Kimi local; ~$0.01/file with Haiku.
 EOF
             exit 0 ;;
         *) INPUT_FILE="$1"; shift ;;
@@ -67,9 +94,43 @@ if [ ! -f "$INPUT_FILE" ]; then
     exit 1
 fi
 
-if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-    echo "Error: ANTHROPIC_API_KEY not set"
-    echo "Get your key at: https://console.anthropic.com/"
+# ── Backend availability checks ──
+have_kimi() {
+    curl -s --max-time 3 "${OLLAMA_URL%/api/generate}/api/tags" 2>/dev/null \
+        | grep -q "$KIMI_MODEL"
+}
+
+have_anthropic() {
+    [ -n "${ANTHROPIC_API_KEY:-}" ]
+}
+
+# Resolve auto → concrete backend
+if [ "$BACKEND" = "auto" ]; then
+    if have_kimi; then
+        BACKEND="kimi"
+    elif have_anthropic; then
+        BACKEND="anthropic"
+    else
+        echo "Error: no usable backend found"
+        echo "  Kimi: Ollama with $KIMI_MODEL not running at $OLLAMA_URL"
+        echo "  Anthropic: ANTHROPIC_API_KEY not set"
+        echo ""
+        echo "Set up Kimi (recommended, free):"
+        echo "  brew install ollama && ollama serve &"
+        echo "  ollama pull $KIMI_MODEL"
+        echo ""
+        echo "Or set up Anthropic (paid):"
+        echo "  export ANTHROPIC_API_KEY=sk-ant-..."
+        exit 1
+    fi
+fi
+
+if [ "$BACKEND" = "kimi" ] && ! have_kimi; then
+    echo "Error: --kimi requested but $KIMI_MODEL not reachable at $OLLAMA_URL"
+    exit 1
+fi
+if [ "$BACKEND" = "anthropic" ] && ! have_anthropic; then
+    echo "Error: --anthropic requested but ANTHROPIC_API_KEY not set"
     exit 1
 fi
 
@@ -108,25 +169,49 @@ else
     FAQ_HEADER="FAQ"
 fi
 
-# ── Call Anthropic API ──
-call_api() {
+SYSTEM_PROMPT="You are an expert knowledge curator. Be concise and structured."
+
+# ── Backend implementations ──
+call_kimi() {
+    local prompt="$1"
+    local payload
+    payload=$(python3 -c "
+import json, sys
+prompt = sys.argv[1]
+system = sys.argv[2]
+print(json.dumps({
+    'model': '$KIMI_MODEL',
+    'prompt': system + '\n\n' + prompt,
+    'stream': False,
+    'options': {'temperature': 0.3, 'num_predict': $MAX_TOKENS * 2},
+}))
+" "$prompt" "$SYSTEM_PROMPT")
+
+    local response
+    response=$(curl -s --max-time 120 "$OLLAMA_URL" \
+        -H "Content-Type: application/json" \
+        -d "$payload")
+
+    python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('response',''))" <<< "$response"
+}
+
+call_anthropic() {
     local prompt="$1"
     local escaped_prompt
     escaped_prompt=$(printf '%s' "$prompt" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
 
     local response
-    response=$(curl -s --max-time 90 "$API_URL" \
+    response=$(curl -s --max-time 90 "$ANTHROPIC_URL" \
         -H "x-api-key: $ANTHROPIC_API_KEY" \
         -H "anthropic-version: 2023-06-01" \
         -H "content-type: application/json" \
         -d "{
-            \"model\": \"$MODEL\",
+            \"model\": \"$HAIKU_MODEL\",
             \"max_tokens\": $MAX_TOKENS,
-            \"system\": \"You are an expert knowledge curator. Be concise and structured.\",
+            \"system\": \"$SYSTEM_PROMPT\",
             \"messages\": [{\"role\": \"user\", \"content\": $escaped_prompt}]
         }")
 
-    # Extract text content
     if command -v jq &>/dev/null; then
         echo "$response" | jq -r '.content[0].text // empty' 2>/dev/null
     else
@@ -134,8 +219,16 @@ call_api() {
     fi
 }
 
+call_llm() {
+    if [ "$BACKEND" = "kimi" ]; then
+        call_kimi "$1"
+    else
+        call_anthropic "$1"
+    fi
+}
+
 # ── Concepts extraction ──
-echo "Compiling concepts: $STEM..."
+echo "Compiling concepts: $STEM (backend=$BACKEND)..."
 CONCEPTS_PROMPT="Extract core knowledge from this text. $LANG_HINT
 
 $RAW
@@ -158,7 +251,7 @@ Output format:
 
 TARGET: <3000 chars, concrete not abstract"
 
-CONCEPTS_RESULT=$(call_api "$CONCEPTS_PROMPT")
+CONCEPTS_RESULT=$(call_llm "$CONCEPTS_PROMPT")
 
 if [ -z "$CONCEPTS_RESULT" ]; then
     echo "Error: concepts extraction failed for $STEM"
@@ -186,7 +279,7 @@ A: (direct answer, 2-3 sentences, reference source)
 
 TARGET: <3000 chars"
 
-FAQ_RESULT=$(call_api "$FAQ_PROMPT")
+FAQ_RESULT=$(call_llm "$FAQ_PROMPT")
 
 if [ -z "$FAQ_RESULT" ]; then
     echo "Error: FAQ generation failed for $STEM"
@@ -196,4 +289,4 @@ fi
 echo "$FAQ_RESULT" > "$FAQ_FILE"
 echo "  -> $FAQ_FILE ($(wc -c < "$FAQ_FILE") bytes)"
 
-echo "Done: $STEM compiled successfully"
+echo "Done: $STEM compiled successfully (backend=$BACKEND)"
